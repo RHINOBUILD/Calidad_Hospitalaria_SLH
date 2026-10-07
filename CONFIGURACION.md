@@ -1,70 +1,32 @@
-# Instalación y configuración técnica
+# Configuración técnica
 
-## Requisitos
-
-- Node.js 24 para ejecutar todas las pruebas (la integración utiliza `node:sqlite`).
-- pnpm 11.25.0, la versión indicada en `package.json`.
-- Cloudflare D1 y R2 para ejecución persistente, con bindings `DB` y `BUCKET`.
-- Un proveedor de identidad confiable: esta versión utiliza Sign in with ChatGPT en Sites.
-
-## Instalar y verificar
-
-Desde la carpeta del proyecto, con pnpm disponible:
-
-```bash
-pnpm install --frozen-lockfile
-node tests/core.mjs
-node tests/integration.mjs
-pnpm exec tsc --noEmit
-pnpm build
-```
-
-No se necesita una base de producción para las pruebas de integración. Se utiliza SQLite en memoria y almacenamiento simulado. Las pruebas cubren autorización, archivos, aprobación, asignaciones, lectura/examen, límite de intentos, versiones y recuperación. No equivalen a una prueba visual ni de infraestructura productiva.
+El servidor utiliza cuentas propias. La guía de publicación y los pendientes de infraestructura están en [DESPLIEGUE_INDEPENDIENTE.md](DESPLIEGUE_INDEPENDIENTE.md).
 
 ## Desarrollo local
 
-```bash
-pnpm dev
-```
+Requiere Node 24, pnpm 11.25.0 y los bindings DB/D1 y BUCKET/R2. Instalar con `pnpm install --frozen-lockfile`. Copiar `.dev.vars.example` a `.dev.vars` y configurar un correo y una clave de instalación de prueba de al menos 32 caracteres. Este archivo local se excluye de Git.
 
-En un clon normal, el adaptador de desarrollo permite una identidad simulada **solo en loopback** (`localhost`/`127.0.0.1`): correo `seedy@sites.test`. No representa al propietario real ni es un mecanismo de autenticación productiva. Para usar esa identidad en la prueba local, configura `ORG_OWNER_EMAIL=seedy@sites.test` en el entorno del Worker local, aplica las migraciones al D1 local y mantén los mismos bindings `DB` y `BUCKET`.
+Ejecutar `pnpm run db:migrate:local`, después `pnpm dev`. Abrir `/setup` para crear al propietario; luego `/login`. No se inyectan usuarios de prueba automáticamente. Las cookies HTTP de desarrollo solo se emiten en localhost; producción requiere HTTPS.
 
-El arranque por sí solo no provisiona datos ni garantiza una sesión funcional: D1, R2 y la variable del propietario deben estar disponibles en el Worker. El ejemplo `.dev.vars.example` contiene únicamente el correo de prueba; configura el archivo local según el runtime de Wrangler/Vite y nunca lo subas.
+## Verificación
 
-## Base de datos
+`pnpm run test:core`, `pnpm run test:integration`, `pnpm run test:auth`, `pnpm run typecheck`, `pnpm run build`.
 
-Las migraciones SQL están en `drizzle/` y deben aplicarse en orden: `0000`, `0001`, `0002`. Contienen el esquema, no datos de producción. No modifiques una migración ya aplicada: genera otra cuando evolucione `db/schema.ts`.
+Las pruebas cubren autorización, evidencias, aprobación, formación, exámenes, versiones, respaldos y autenticación. Utilizan SQLite en memoria y almacenamiento simulado; no certifican la infraestructura publicada ni el cumplimiento normativo.
 
-En Sites, utiliza su mecanismo de migraciones/provisión. Para otro despliegue Cloudflare, configura Wrangler con los identificadores reales de D1/R2 y la ruta de migraciones antes de aplicarlas. Los nombres y el ID de D1 en `vite.config.ts` son valores de desarrollo; no los uses como identificadores productivos.
-
-## Entorno productivo
-
-`ORG_OWNER_EMAIL` debe contener el correo del propietario y almacenarse como secreto/variable del servidor. El primer acceso válido inicializa la organización. Después, Centro de Calidad permite configurar usuarios, roles, hospitales, áreas y ficha de personal. En el alojamiento privado debe autorizarse también el acceso de las cuentas.
-
-La identidad se lee en `app/chatgpt-auth.ts`. En Sites, el servicio establece los encabezados confiables de identidad. En un alojamiento diferente, sustituye o integra este adaptador con sesiones verificadas en servidor: no publiques una aplicación que confíe directamente en encabezados elegidos por el visitante.
-
-`.openai/hosting.json` conserva las declaraciones `DB`/`BUCKET`, pero omite el ID del sitio existente para evitar vincular esta copia a ese despliegue. El ZIP es una copia de código para GitHub, no un despliegue preconfigurado ni una copia de los datos reales.
-
-## Ubicación de funciones
+## Estructura
 
 | Carpeta | Función |
 | --- | --- |
-| `app/` | Pantallas, estilos y portal |
-| `app/api/` | Calidad, formación, archivos, administración e importación |
-| `lib/` | Autorización, validación, calificación y respaldos |
-| `db/` y `drizzle/` | Esquema y migraciones |
-| `public/` | Logotipos y recursos |
-| `tests/` | Verificaciones de lógica y flujos |
-| `build/` y `scripts/` | Adaptadores y ejecución del alojamiento |
+| app/ | Pantallas y portal |
+| app/api/ | Rutas autenticadas y flujos de acceso |
+| lib/ | Sesiones, contraseñas, permisos y lógica |
+| db/ y drizzle/ | Esquema y migraciones 0000–0003 |
+| public/ | Logotipos y recursos |
+| tests/ | Verificaciones automatizadas |
+| build/app-worker.ts | Servidor independiente |
+| wrangler.jsonc | Bindings de Cloudflare |
 
-## Antes de abrir operación institucional
+Las migraciones no contienen datos institucionales. No modificar migraciones ya aplicadas. Los archivos históricos de Sites permanecen como referencia, pero `vite.config.ts` utiliza el servidor independiente y no sus adaptadores de identidad.
 
-Configura nombres reales y usuarios; verifica permisos con cuentas de cada rol; prueba archivos y recuperación en el entorno elegido; completa la validación visual y con usuarios; incorpora manual CEHC; acuerda retención y recuperación externa. No se ha implementado un expediente clínico ni certificación automática.
-
-## Acceso directo desde GitHub Pages
-
-`index.html` redirige automáticamente al alojamiento de la plataforma mediante `location.replace` y actualización meta como respaldo. No presenta una portada ni requiere un segundo clic. Si el navegador bloquea ambas opciones, queda un enlace alternativo dentro de `noscript`.
-
-La fuente de Pages debe publicar la raíz de `main` (o un flujo que incluya `index.html`). `.nojekyll` mantiene los archivos estáticos sin procesamiento de Jekyll. La redirección no cambia permisos de acceso, no inicia sesión, no migra D1/R2 ni conecta despliegues del backend. El usuario debe autenticarse cuando el alojamiento lo solicite.
-
-Comprobaciones rápidas: `pnpm test:core`, `pnpm test:integration` y `pnpm typecheck`.
+GitHub Pages conserva temporalmente el destino anterior. Cambiar la redirección únicamente al disponer de una URL HTTPS independiente publicada y verificada.

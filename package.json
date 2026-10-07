@@ -14,7 +14,11 @@
     "db:generate": "drizzle-kit generate",
     "test:core": "node tests/core.mjs",
     "test:integration": "node tests/integration.mjs",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "deploy": "node scripts/deploy-independent.mjs",
+    "db:migrate:local": "wrangler d1 migrations apply saint-lukes-quality --local",
+    "db:migrate:remote": "wrangler d1 migrations apply saint-lukes-quality --remote",
+    "test:auth": "node tests/auth.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",
