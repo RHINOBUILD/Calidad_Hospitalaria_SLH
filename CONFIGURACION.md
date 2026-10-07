@@ -61,10 +61,10 @@ La identidad se lee en `app/chatgpt-auth.ts`. En Sites, el servicio establece lo
 
 Configura nombres reales y usuarios; verifica permisos con cuentas de cada rol; prueba archivos y recuperación en el entorno elegido; completa la validación visual y con usuarios; incorpora manual CEHC; acuerda retención y recuperación externa. No se ha implementado un expediente clínico ni certificación automática.
 
-## Entrada desde GitHub Pages
+## Acceso directo desde GitHub Pages
 
-`index.html` es la portada estática con logotipo y acceso a la plataforma existente. Usa rutas relativas para funcionar bajo `/Calidad_Hospitalaria_SLH/`. `.nojekyll` permite servir archivos sin procesamiento de Jekyll. El botón dirige al alojamiento que ejecuta las APIs y aplica la autorización.
+`index.html` redirige automáticamente al alojamiento de la plataforma mediante `location.replace` y actualización meta como respaldo. No presenta una portada ni requiere un segundo clic. Si el navegador bloquea ambas opciones, queda un enlace alternativo dentro de `noscript`.
 
-La fuente de Pages debe apuntar a la raíz de `main` (o un flujo que publique `index.html` y `public/`). Esta portada no migra D1/R2 ni conecta despliegues del backend. Eliminar README no convierte el código React en una aplicación ejecutable en Pages.
+La fuente de Pages debe publicar la raíz de `main` (o un flujo que incluya `index.html`). `.nojekyll` mantiene los archivos estáticos sin procesamiento de Jekyll. La redirección no cambia permisos de acceso, no inicia sesión, no migra D1/R2 ni conecta despliegues del backend. El usuario debe autenticarse cuando el alojamiento lo solicite.
 
 Comprobaciones rápidas: `pnpm test:core`, `pnpm test:integration` y `pnpm typecheck`.
