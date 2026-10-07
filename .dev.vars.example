@@ -1,0 +1,3 @@
+# Ejemplo exclusivo para el Worker local; copiar/configurar según el runtime.
+# Nunca usar este correo de prueba como propietario en producción.
+ORG_OWNER_EMAIL=seedy@sites.test
